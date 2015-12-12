@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="service.LIFX"
+       name="LIFX"
+       version="1.1.0"
+       provider-name="Chris Boxsell">
+	<requires>
+	  <import addon="xbmc.python" version="2.6.0"/>
+	  <import addon="script.module.requests" version="1.2.7"/>
+	  <import addon="script.module.simplejson" version="2.0.10" optional="true"/>
+	</requires>
+  <extension point="xbmc.service" library="service.py" start="startup"/>
+  <extension point="xbmc.addon.metadata">
+    <platform>all</platform>
+    <summary lang="en">Integrate LIFX to provide a theatre experience.</summary>
+    <description>Turn your living room into the complete home theatre experience with LIFX API 1.1.</description>
+    <license>GPL 2.0</license>
+  </extension>
+</addon>
