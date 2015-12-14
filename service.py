@@ -4,6 +4,7 @@ import sys
 # import xbmcaddon
 import os
 import subprocess
+import logging
 from time import sleep
 from subprocess import call
 
@@ -11,14 +12,11 @@ import requests
 import json
 import ConfigParser
 lifxCloud = 'https://api.lifx.com/v1/'
-LF = open(os.getenv('APPDATA') + '\\Kodi\\lifx.log','w',0)
-LF.write('** Log file open ** \n')
-
 
 def _log(data):
-    if loglevel == 'trace':
-        LF.write('**** ' + str(data) + ' ****\n')
-
+    #if loglevel == 'trace':
+    #    LF.write('**** ' + str(data) + ' ****\n')
+    logging.debug(data)
 
 def checkIfMovie():
     _log('Check if Movie')
@@ -32,8 +30,6 @@ def checkIfMovie():
 def getSceneList(movie, tv, pause):
     global setSceneTV
     global setSceneMovie
-    global setScenePause
-    
     _log('Get Scenes')
     getAvailableScenes = requests.get(lifxCloud + 'scenes', headers=header)
     _log(getAvailableScenes.url)
@@ -58,7 +54,7 @@ def getSceneList(movie, tv, pause):
         _log('Scene TV ' + setSceneTV + ' Scene Movie ' + setSceneMovie + ' Pause ' + setScenePause)
     else:
         if getAvailableScenes.status_code == 401:
-            print('******* Error connecting ')
+            logging.warning('******* Error connecting ')
             """ Error on the connection """
             getAvailableScenes.raise_for_status()
 
@@ -162,8 +158,7 @@ def loadConfig ():
     global bulbs
     global setColor
     global config
-    global setSceneTV
-    global setSceneMovie
+    global setScenePause
     global movie_scene
     global tv_scene
     global loglevel
@@ -175,16 +170,15 @@ def loadConfig ():
     global pause_scene
     global scene_state_delay
     global LF
+    global logFile
     
     confpath = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'lifx.cfg')
     config = ConfigParser.RawConfigParser()
     config.readfp(open(confpath))
     loglevel = config.get('Logging','level')
-    LF.write('** loglevel = ' + loglevel + '\n')
-    if(loglevel == 'trace'):
-        LF.write('** Start the log ** \n')
-        
-    _log('load config')
+    logFile = config.get('Logging','FileName')
+       
+    #_log('load config')
     
     apiKey = config.get('Authentication', 'apiKey')
     apiKey = 'Bearer ' + apiKey
@@ -207,13 +201,17 @@ def loadConfig ():
     delay_end_play = config.get('Delay','EndPlay')
     scene_state_delay = 0
 	
+def main():
+    loadConfig()
+    logging.basicConfig(filename=os.getenv('APPDATA') + '\\Kodi\\' + logFile, filemode='w', format='%(asctime)s %(message)s' , level=getattr(logging,loglevel.upper()))
+    preVideoLightState = []
+    sceneLightState = []
+    getSceneList(movie_scene, tv_scene, pause_scene)
+    
+if __name__ == '__main__':
+    main()
 
-loadConfig()
 
-preVideoLightState = []
-sceneLightState = []
-
-getSceneList(movie_scene, tv_scene, pause_scene)
 
 
  
@@ -224,8 +222,6 @@ class XBMCPlayer(xbmc.Player):
     def onPlayBackStarted(self):
         global preVideoLightState
         global sceneLightState
-        global setSceneTV
-        global setSceneMovie
         _log('****** Playback Started')
         preVideoLightState = getLightState(bulbs['set'], bulbs['type'])
         _log('** the light state before playing is ' + str(preVideoLightState))
